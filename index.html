@@ -1,0 +1,115 @@
+<!doctype html>
+<html>
+
+<head>
+<title>Bar Chart</title>
+<script src="dist/chart.js"></script>
+<script src="utils.js"></script>
+<script
+		  src="https://code.jquery.com/jquery-3.3.1.min.js"
+		  integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+		  crossorigin="anonymous"></script>
+<style>
+canvas {
+	-moz-user-select: none;
+	-webkit-user-select: none;
+	-ms-user-select: none;
+}
+</style>
+</head>
+
+<body>
+<div id="container" style="width: 100%;">
+	<canvas id="canvas"></canvas>
+</div>
+<script>
+	function getSectorColor(pt){
+		if(pt >= 1) {
+			return "rgb(0, 255, 0)";
+		}else if(pt < 1 && pt > -1) {
+			return window.chartColors.grey;
+		}else {
+			return "rgb(255, 0, 0)";
+		}
+	}
+	window.onload = function() {
+		$.get( "https://api.iextrading.com/1.0/stock/market/sector-performance", function( data ) {
+			console.log(data);
+			var sectors = [];
+			var sectorData = []
+			var sectorColors = []
+			for(var i = 0; i < data.length; i++){
+				sectors.push(data[i].name);
+				sectorData.push((data[i].performance*100).toFixed(2));
+				sectorColors.push(getSectorColor(data[i].performance*100));
+			}
+
+			var color = Chart.helpers.color;
+			var barChartData = {
+				labels: sectors,
+				datasets: [{
+					backgroundColor: sectorColors,
+					borderColor: window.chartColors.black,
+					borderWidth: 1,
+					data: sectorData
+				}]
+
+			};
+
+			var ctx = document.getElementById('canvas').getContext('2d');
+			window.myBar = new Chart(ctx, {
+				type: 'bar',
+				data: barChartData,
+				options: {
+					responsive: true,
+					legend: {
+						display: false,
+					},
+					title: {
+						display: true,
+						text: 'Live Market Sector Performance'
+					},
+			    "hover": {
+			      "animationDuration": 0
+			    },
+			    "animation": {
+			      "duration": 1,
+			      "onComplete": function() {
+			        var chartInstance = this.chart,
+			          ctx = chartInstance.ctx;
+
+			        ctx.font = Chart.helpers.fontString(Chart.defaults.global.defaultFontSize, Chart.defaults.global.defaultFontStyle, Chart.defaults.global.defaultFontFamily);
+			        ctx.textAlign = 'center';
+			        ctx.textBaseline = 'bottom';
+
+			        this.data.datasets.forEach(function(dataset, i) {
+			          var meta = chartInstance.controller.getDatasetMeta(i);
+			          meta.data.forEach(function(bar, index) {
+			            var data = dataset.data[index];
+			            ctx.fillText(data + "%", bar._model.x, bar._model.y - 5);
+			          });
+			        });
+			      }
+			    }
+				}
+			});
+		});
+	};
+
+	setInterval(function(){
+		$.get( "https://api.iextrading.com/1.0/stock/market/sector-performance", function( data ) {
+			console.log(data);
+			var sectors = [];
+			var sectorData = []
+			for(var i = 0; i < data.length; i++){
+				sectorData.push((data[i].performance*100).toFixed(2));
+			}
+
+			window.myBar.data.datasets[0].data = sectorData;
+		 	window.myBar.update();
+		});
+	}, 1000);
+</script>
+</body>
+
+</html>
