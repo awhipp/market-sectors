@@ -42,7 +42,20 @@ window.chartColors = {
 	var Color = global.Color;
 
 	Samples.utils = {
-		// Adapted from http://indiegamr.com/generate-repeatable-random-numbers-in-js/
+		getSectorColor: function(pt){
+			if (pt > 0.25 && pt < 1){
+				    return "#81C784";
+			} else if(pt >= 1) {
+				return "#1B5E20";
+			} else if(pt < -0.25 && pt > -1) {
+				return "#e57373";
+			} else if(pt <= -1) {
+				return "#d50000";
+			} else {
+				return window.chartColors.grey;
+			}
+		},
+
 		srand: function(seed) {
 			this._seed = seed;
 		},
