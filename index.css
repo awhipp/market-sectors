@@ -1,3 +1,9 @@
+.container {
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+    position: relative;
+}
 
 .loaderHolder {
 	width: 100%;
@@ -43,11 +49,12 @@ canvas {
 /* Modal Content/Box */
 .modal-content {
     background-color: #fefefe;
-    margin: 1%;
     padding: 20px;
     border: 1px solid #888;
-    max-width: 98%;
-    overflow: scroll;
+    max-width: 1200px;
+    width: 98%;
+    margin: 1% auto;
+    overflow-x: scroll;
 }
 
 /* The Close Button */
@@ -73,9 +80,42 @@ canvas {
 	text-align: center;
 }
 
-#tickerTable tr td:first-child{
+#tickerTable tr th:nth-child(2){
+    text-align: left;
+}
+
+#tickerTable tr td:nth-child(2){
 	text-align: left;
 }
+
+#tickerTable tr.odd td:first-child, #tickerTable tr.even td:first-child {
+    text-align:center;
+    color:forestgreen;
+    cursor: pointer;
+}
+
+#tickerTable tr.shown td:first-child {
+    text-align:center; 
+    color:red;
+}
+
+#tickerTable td table.extraInfo {
+    color: black;
+}
+
+#tickerTable td table.extraInfo td, #tickerTable td table.extraInfo tr, #tickerTable td table.extraInfo tr:hover, #tickerTable td table.extraInfo td:hover {
+    background-color: transparent !important;
+}
+
+.tickerHeader {
+    text-align: center;
+}
+
+/*#tickerModal .dataTables_wrapper .dataTables_filter {
+    float: unset;
+    margin: 0 auto 1em 0;
+    text-align: center;
+}*/
 
 footer {
 	width: 100%;

@@ -2,25 +2,54 @@ var IEX_ENDPOINT = "https://api.iextrading.com/1.0";
 var SECTOR_ENDPOINT = "/stock/market/sector-performance";
 var TICKER_ENDPOINT = "/stock/market/collection/sector?collectionName=";
 
+function convertDataToArry(sectorData) {
+  var data = [];
+  for (var key in sectorData) {
+    if (sectorData.hasOwnProperty(key)) {
+      data.push(sectorData[key]);
+    }
+  }
+  for (var i = 0; i < sectorData.length; i++) {
+      data.push(sectorData.performance);
+  }
+  return data;
+}
+
 function Sector(data) {
     this.sectors = [];
-    this.sectorData = [];
+    this.sectorData = {};
     this.sectorColors = [];
     this.myBar = undefined;
     this.tickerTable =  $("#tickerTable").DataTable( {
-        "order": [[ 3, "desc" ]],
-        responsive: true
+        "order": [[ 4, "desc" ]],
+        responsive: true,
+          "columnDefs": [ {
+            "targets": 0,
+            "orderable": false
+          } ],
+        "pageLength": 10
     } );
+
+    $("#tickerTable").on( 'page.dt', function () {
+      setTimeout(function(){
+        $('tr td:first-child').on('click', function () {
+          toggleTab(this);
+        });
+      }, 500);
+    } );
+
+    this.lastSector = undefined;
     this.latestSectorData = undefined;
 
     for(var i = data.length-1; i >= 0; i--){
       this.sectors.push(data[i].name);
-      this.sectorData.push((data[i].performance*100).toFixed(2));
+      this.sectorData[data[i].name] = ((data[i].performance*100).toFixed(2));
       this.sectorColors.push(Samples.utils.getSectorColor(data[i].performance*100));
     }
 
     this.createChart();
 }
+
 
 Sector.prototype.createChart = function(){
   var color = Chart.helpers.color;
@@ -30,7 +59,7 @@ Sector.prototype.createChart = function(){
       backgroundColor: this.sectorColors,
       borderColor: window.chartColors.black,
       borderWidth: 1,
-      data: this.sectorData
+      data: convertDataToArry(this.sectorData)
     }]
   };
 
@@ -46,17 +75,19 @@ Sector.prototype.createChart = function(){
         hover: { mode: null },
         legend: { display: false },
         title: {
-          display: true,
-          text: 'Live Market Sector Performance',
-          fontColor: 'black'
+          display: false
         },
         onClick: function(c,i) {
           $(".loaderHolder").fadeIn();
           e = i[0];
-          var indexVal = e._index;
-          var x_value = this.data.labels[e._index];
-          var y_value = this.data.datasets[0].data[e._index];
-          getSectorTickers(x_value);
+          if(e) {
+            var indexVal = e._index;
+            var x_value = this.data.labels[e._index];
+            var y_value = this.data.datasets[0].data[e._index];
+            getSectorTickers(x_value);
+          } else {
+            $(".loaderHolder").hide();
+          }
         },
         hover: { "animationDuration": 1 },
         "animation": {
@@ -89,16 +120,19 @@ Sector.prototype.createChart = function(){
 
 
 Sector.prototype.updateTable = function(data){
-  this.sectorData = [];
-  for(var i = data.length-1; i >= 0; i--){
-    this.sectorData.push((data[i].performance*100).toFixed(2));
+  if (this.myBar) {
+    for(var i = data.length-1; i >= 0; i--){
+      this.sectorData[data[i].name] = ((data[i].performance*100).toFixed(2));
+    }
+    this.myBar.data.datasets[0].data = convertDataToArry(this.sectorData);
+    this.myBar.update();
   }
-  this.myBar.data.datasets[0].data = this.sectorData;
-  this.myBar.update();
 }
 
-Sector.prototype.addRow = function(row) {
-  this.tickerTable.row.add( row ).draw( false );
+Sector.prototype.addRow = function(row, symbol, idx) {
+  var dtRow = this.tickerTable.row.add( row ).draw().node();
+  dtRow.dataset["index"] = idx;
+  $(dtRow).attr("symbol", symbol);
 }
 
 Sector.prototype.drawTable = function() {
@@ -109,10 +143,12 @@ Sector.prototype.clearTable = function() {
   this.tickerTable.clear().draw();
 }
 
+var detailControl = '<td class="details-control"><i class="fa fa-plus-square" aria-hidden="true"></i></td>';
+
 function getMinimizedTicker(tickerData) {
   var companyName = tickerData.companyName;
-  if(companyName.length > 22) {
-    companyName = companyName.substring(0,22).trim() + "...";
+  if(companyName.length > 50) {
+    companyName = companyName.substring(0,50).trim() + "...";
   }
 
   var dir = "green";
@@ -122,18 +158,18 @@ function getMinimizedTicker(tickerData) {
   } else if (percentChange == 0) {
       dir = "black";
   }
-
   return [
+    detailControl,
     companyName + "&nbsp;(" + tickerData.symbol + ")",
-    tickerData.iexRealtimePrice,
-    tickerData.change,
-    "<span style='color: "+dir+";'>" + percentChange + "%</span>",
+    "<span class='price'>" + tickerData.iexRealtimePrice + "</span>",
+    "<span class='priceChange'>" + tickerData.change + "</span>",
+    "<span style='color: "+dir+";' class='percentChange'>" + percentChange + "%</span>",
     tickerData.open,
-    tickerData.high,
-    tickerData.low,
+    "<span class='high'>" + tickerData.high + "</span>",
+    "<span class='low'>" + tickerData.low + "</span>",
     tickerData.close,
-    tickerData.iexVolume
-  ]
+    "<span class='volume'>" + tickerData.iexVolume + "</span>"
+  ];
 }
 
 function acceptableTime(tickerUpdate) {
@@ -151,7 +187,66 @@ function acceptableTime(tickerUpdate) {
   return (diff <= offset);
 }
 
+
+function format(idx){
+   // `d` is the original data object for the row
+   var company = window.sector.latestSectorData[idx];
+   var extraTable = "<table class='extraInfo'>";
+   extraTable += "<thead>";
+   extraTable += "<tr>";
+   extraTable += "<th>Average Daily Volume</th>";
+   extraTable += "<th>52W High</th>";
+   extraTable += "<th>52W Low</th>";
+   extraTable += "<th>YTD Change</th>";
+   extraTable += "<th>PE Ratio</th>";
+   extraTable += "<th>Market Cap</th>";
+   extraTable += "<th>Exchange</th>";
+   extraTable += "<th>Last Update</th>";
+   extraTable += "</tr>";
+   extraTable += "</thead>";
+
+   extraTable += "<tbody>";
+   extraTable += "<tr>";
+   extraTable += "<td>" + company.avgTotalVolume + "</td>";
+   extraTable += "<td class='week52Low'>" + company.week52Low + "</td>";
+   extraTable += "<td class='week52High'>" + company.week52High + "</td>";
+   extraTable += "<td class='ytdChange'>" + (company.ytdChange*100).toFixed(2) + "%</td>";
+   extraTable += "<td>" + company.peRatio + "</td>";
+   extraTable += "<td class='marketCap'>" + company.marketCap + "</td>";
+   extraTable += "<td>" + company.primaryExchange + "</td>";
+   extraTable += "<td class='updateTime'>" + company.latestTime + "</td>";
+   extraTable += "</tr>";
+   extraTable += "</tbody>";
+   extraTable += "</table>";
+
+   return extraTable;
+}
+
+
+function toggleTab(item) {
+  var tr = $(item).closest('tr');
+  var tdi = tr.find("i.fa");
+  var row = window.sector.tickerTable.row(tr);
+
+  if (row.child.isShown()) {
+    // This row is already open - close it
+    row.child.hide();
+    tr.removeClass('shown');
+    tdi.first().removeClass('fa-minus-square');
+    tdi.first().addClass('fa-plus-square');
+  }
+  else {
+    // Open this row
+    var idx = parseInt(row.node().dataset["index"]);
+    row.child(format(idx)).show();
+    tr.addClass('shown');
+    tdi.first().removeClass('fa-plus-square');
+    tdi.first().addClass('fa-minus-square');
+  }
+}
+
 function getSectorTickers(sector) {
+  window.sector.lastSector = sector;
   $.ajax({
     url : IEX_ENDPOINT + TICKER_ENDPOINT + sector.replace(" ", "%20"),
     type : "get",
@@ -161,16 +256,21 @@ function getSectorTickers(sector) {
 
       $(".tickerHeader").text(sector + " Sector Companies");
       window.sector.clearTable();
+      lastIdx = 0;
       for(var i = 0; i < data.length; i++) {
         if(data[i].iexVolume > 0 && acceptableTime(data[i].latestUpdate)) {
-          window.sector.addRow(
-            getMinimizedTicker(data[i])
+          var row = window.sector.addRow(
+            getMinimizedTicker(data[i]), data[i].symbol, i
           );
         }
       }
       window.sector.drawTable();
       $(".loaderHolder").fadeOut();
       openTickerBox();
+
+      $('tr td:first-child').on('click', function () {
+        toggleTab(this);
+      });
     },
     error: function(e) {
       console.log(e);
@@ -185,6 +285,36 @@ var closeSpan = document.getElementsByClassName("close")[0];
 // When the user clicks on the button, open the modal
 function openTickerBox() {
     tickerModal.style.display = "block";
+}
+
+function updateSectorTable() {
+  if(window.sector && window.sector.lastSector && $("#tickerModal").is(":visible")) {
+    $.ajax({
+      url : IEX_ENDPOINT + TICKER_ENDPOINT + window.sector.lastSector.replace(" ", "%20"),
+      type : "get",
+      dataType: "jsonp",
+      success : function(data) {
+        window.sector.latestSectorData = data;
+        for(var i = 0; i < data.length; i++) {
+          if(data[i].symbol) {
+            var row = $("[symbol='"+data[i].symbol+"']");
+            if(row && row[0]) {
+              if(row.find(".price")[0].text !== data[i].iexRealtimePrice) {
+                row.find(".price")[0].text = data[i].iexRealtimePrice;
+                row.find(".priceChange")[0].text = data[i].change;
+                row.find(".percentChange")[0].text = (data[i].changePercent*100).toFixed(2);
+                row.find(".volume")[0].text = data[i].iexVolume;
+                row.find(".high")[0].text = data[i].high;
+                row.find(".low")[0].text = data[i].low;
+              }
+              //row.find(".ytdChange")[0].text = (data[i].ytdChange*100).toFixed(2);
+            }
+          }
+        }
+      }
+
+    });
+  }
 }
 
 $(function(){
@@ -204,7 +334,11 @@ $(function(){
         console.log(e);
       }
     });
-  }, 500);
+  }, 5000);
+
+  setInterval(function(){
+    updateSectorTable();
+  }, 15000);
 
 
   // When the user clicks on <span> (x), close the modal

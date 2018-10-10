@@ -8,51 +8,59 @@
 	<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
 	<script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
 	<link rel="stylesheet" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css"/>
+	<link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
+
 	<link rel="stylesheet" href="index.css"/>
 </head>
 
 <body>
+	<div class="container">
+		<div id="container"  style="position: relative; width:100%">
+			<h2>Live Market Sector Performance</h2>
+			<p> Click a sector to see more details about the underlying stocks. </p>
+			<canvas id="canvas"></canvas>
+		</div>
+
+		<!-- The Modal -->
+		<div id="tickerModal" class="modal">
+		  <!-- Modal content -->
+		  <div class="modal-content">
+			  <div class="modal-header">
+			    <span class="close">&times;</span>
+			    <h2 class="tickerHeader"></h2>
+			  </div>
+				<table id="tickerTable" class="display">
+				    <thead>
+				        <tr>
+				        	<th></th>
+				            <th>Company</th>
+				            <th>Price</th>
+							<th>Change</th>
+							<th>%</th>
+				            <th>Open</th>
+				            <th>High</th>
+				            <th>Low</th>
+				            <th>Close</th>
+				            <th>Volume</th>
+				        </tr>
+				    </thead>
+				    <tbody id="tableBody">
+				    </tbody>
+				</table>
+		  </div>
+
+		</div>
+
+		<div class="sectorTickers">
+		</div>
+
+		<script src="sector.js"></script>
+	</div>
+
 	<div class="loaderHolder">
 		<div class="loader"></div>
 	</div>
 
-	<div id="container"  style="position: relative; width:100%">
-		<canvas id="canvas"></canvas>
-	</div>
-
-	<!-- The Modal -->
-	<div id="tickerModal" class="modal">
-	  <!-- Modal content -->
-	  <div class="modal-content">
-		  <div class="modal-header">
-		    <span class="close">&times;</span>
-		    <h2 class="tickerHeader"></h2>
-		  </div>
-			<table id="tickerTable" class="display">
-			    <thead>
-			        <tr>
-			            <th>Company</th>
-			            <th>Price</th>
-									<th>Change</th>
-									<th>%</th>
-			            <th>Open</th>
-			            <th>High</th>
-			            <th>Low</th>
-			            <th>Close</th>
-			            <th>Volume</th>
-			        </tr>
-			    </thead>
-			    <tbody id="tableBody">
-			    </tbody>
-			</table>
-	  </div>
-
-	</div>
-
-	<div class="sectorTickers">
-	</div>
-
-	<script src="sector.js"></script>
 	<footer>
 		Data provided for free by <a href="https://iextrading.com/developer" target="_blank">IEX</a>.
 		View <a href="https://iextrading.com/api-exhibit-a/" target="_blank">IEX’s Terms of Use</a>.
