@@ -136,6 +136,21 @@ function getMinimizedTicker(tickerData) {
   ]
 }
 
+function acceptableTime(tickerUpdate) {
+  var today = new Date();
+  var diff = Math.round((new Date() - new Date(tickerUpdate))/(1000*60*60*24));
+  var offset = today.getDay();
+  if (offset == 6) {
+    offset = 2; // account for holidays
+  } else if (offset == 0) {
+    offset = 3; // account for holidays
+  } else {
+    offset = 1; // account for holidays
+  }
+
+  return (diff <= offset);
+}
+
 function getSectorTickers(sector) {
   $.ajax({
     url : IEX_ENDPOINT + TICKER_ENDPOINT + sector.replace(" ", "%20"),
@@ -147,7 +162,7 @@ function getSectorTickers(sector) {
       $(".tickerHeader").text(sector + " Sector Companies");
       window.sector.clearTable();
       for(var i = 0; i < data.length; i++) {
-        if(data[i].iexVolume > 0) {
+        if(data[i].iexVolume > 0 && acceptableTime(data[i].latestUpdate)) {
           window.sector.addRow(
             getMinimizedTicker(data[i])
           );
