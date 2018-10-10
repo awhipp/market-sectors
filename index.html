@@ -6,16 +6,57 @@
 	<script src="dist/chart.js"></script>
 	<script src="dist/utils.js"></script>
 	<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
-	<link rel="stylesheet" href="index.css">
+	<script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
+	<link rel="stylesheet" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css"/>
+	<link rel="stylesheet" href="index.css"/>
 </head>
 
 <body>
-	
+	<div class="loaderHolder">
+		<div class="loader"></div>
+	</div>
+
 	<div id="container"  style="position: relative; width:100%">
 		<canvas id="canvas"></canvas>
 	</div>
 
+	<!-- The Modal -->
+	<div id="tickerModal" class="modal">
+	  <!-- Modal content -->
+	  <div class="modal-content">
+		  <div class="modal-header">
+		    <span class="close">&times;</span>
+		    <h2 class="tickerHeader"></h2>
+		  </div>
+			<table id="tickerTable" class="display">
+			    <thead>
+			        <tr>
+			            <th>Company</th>
+			            <th>Price</th>
+									<th>Change</th>
+									<th>%</th>
+			            <th>Open</th>
+			            <th>High</th>
+			            <th>Low</th>
+			            <th>Close</th>
+			            <th>Volume</th>
+			        </tr>
+			    </thead>
+			    <tbody id="tableBody">
+			    </tbody>
+			</table>
+	  </div>
+
+	</div>
+
+	<div class="sectorTickers">
+	</div>
+
 	<script src="sector.js"></script>
+	<footer>
+		Data provided for free by <a href="https://iextrading.com/developer" target="_blank">IEX</a>.
+		View <a href="https://iextrading.com/api-exhibit-a/" target="_blank">IEX’s Terms of Use</a>.
+	</footer>
 </body>
 
 </html>
